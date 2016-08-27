@@ -1,0 +1,57 @@
+module group where
+
+import prelude
+
+binary_relation (a: U): U = a -> a -> a
+
+
+binary_relation_associative (A: U) (rel: binary_relation A): U = (a b c: A) -> Path A (rel (rel a b) c) (rel a (rel b c))
+
+binary_relation_commutative (A: U) (rel: binary_relation A): U = (a b: A) -> (Path A (rel a b) (rel b a))
+
+
+settype: U = (A: U) * (set A)
+
+associative_binary_relation (A: U): U = (rel: binary_relation A) * (binary_relation_associative A rel)
+
+semigroup: U = (s: settype) * (associative_binary_relation s.1)
+
+is_identity (sg: semigroup) (id: sg.1.1): U = (b: sg.1.1) -> (and (Path sg.1.1 (sg.2.1 b id) b) (Path sg.1.1 (sg.2.1 id b) b))
+
+monoid: U = (s: semigroup) * ((i: s.1.1) * (is_identity s i))
+
+monoid_type (m: monoid): U = m.1.1.1
+monoid_rel (m: monoid): binary_relation (monoid_type m) =  m.1.2.1
+monoid_id (m: monoid): (monoid_type m) = m.2.1
+
+is_reverse (m: monoid) (a b: (monoid_type m)): U =  (and (Path (monoid_type m) (m.1.2.1 a b) m.2.1) (Path (monoid_type m) (m.1.2.1 b a) m.2.1))
+
+
+reverse_is_unique (m: monoid) (i a b: (monoid_type m)) (ea: is_reverse m i a) (eb: is_reverse m i b): (Path (monoid_type m) a b) = 
+    (compPath T a im4 b (compPath T a im3 im4 (compPath T a im2 im3 (compPath T a im1 im2 path1 path2) path3) path4) path5)
+	where
+		T: U = (monoid_type m)
+		id: T = (monoid_id m)
+		rel: binary_relation T = (monoid_rel m)
+		im1: T = (rel a id)
+		ime: T = (rel i b)
+		im2: T = (rel a ime)
+		imc: T = (rel a i)
+		im3: T = (rel imc b)
+		im4: T = (rel id b)
+		path1: (Path T a im1) = inv T im1 a (m.2.2 a).1
+		pathe: (Path T id ime) = inv T ime id eb.1
+		path2: (Path T im1 im2) = <i> (rel a (pathe @ i))
+		path3: (Path T im2 im3) = inv T im3 im2 (m.1.2.2 a i b)
+		pathc: (Path T imc id) = ea.2
+		path4: (Path T im3 im4) = <i> (rel (pathc @ i) b)
+		path5: (Path T im4 b) = (m.2.2 b).2
+
+	 -- a -> a * id -> a * (i * b) ->  (a * i) * b -> id * b -> b
+
+inversable (m: monoid): U = (a: (monoid_type m)) -> (b: (monoid_type m)) * (is_reverse m a b)
+
+group: U = (m: monoid) * (inversable m)
+
+
+
